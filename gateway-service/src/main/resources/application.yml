@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: todo-service
+          uri: lb://todo-service
+          predicates:
+          - Path=/api/todos/**
+          filters:
+          - RewritePath=/api/todos/?(?<path>.*), /$\{path}
+
+        - id: todo-proxy-service
+          uri: lb://todo-proxy-service
+          # uri: http://localhost:8082/
+          predicates:
+          - Path=/proxy/todos/**
+          filters:
+          # Very important the ? in ../todos/?, if not set /api/todos will not be redirected to /proxy/todos
+          - RewritePath=/proxy/todos/?(?<path>.*), /todos/$\{path}
+
+
+eureka:
+  client:
+    registry-fetch-interval-seconds: 5
+    registerWithEureka: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+logging:
+  level:
+    root: warn
+    com.melardev: trace
+    org.springframework.cloud.gateway: trace
